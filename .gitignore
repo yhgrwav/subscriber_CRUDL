@@ -1,0 +1,14 @@
+bin/
+app
+main
+
+.env
+*.env
+
+vendor/
+
+*.log
+
+.idea/
+.vscode/
+
