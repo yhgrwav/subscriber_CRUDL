@@ -10,6 +10,15 @@ import (
 	"go.uber.org/zap"
 )
 
+// CRUDL методы для репозитория
+type SubscriptionRepository interface {
+	Create(ctx context.Context, sub domain.Subscription) (int, error)
+	GetByID(ctx context.Context, id int) (domain.Subscription, error)
+	Update(ctx context.Context, id int, sub domain.Subscription) error
+	Delete(ctx context.Context, id int) error
+	GetStatsByServiceName(ctx context.Context, userID uuid.UUID, serviceName string, time1, time2 time.Time) (int, error)
+	GetByUserID(ctx context.Context, userID uuid.UUID) ([]domain.Subscription, error)
+}
 type PostgresRepo struct {
 	db     *sql.DB
 	logger *zap.Logger
