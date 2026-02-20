@@ -129,3 +129,37 @@ func (r *PostgresRepo) GetStatsByServiceName(ctx context.Context, userID uuid.UU
 	}
 	return result, nil
 }
+
+func (r *PostgresRepo) GetByID(ctx context.Context, id int) (domain.Subscription, error) {
+	query := `SELECT id, service_name, price, user_id, start_date, end_date
+			  FROM subscriptions
+			  WHERE id = $1`
+
+	var (
+		result       domain.Subscription
+		StartT, EndT sql.NullTime
+	)
+
+	err := r.db.QueryRowContext(ctx, query, id).Scan(&result.ID,
+		&result.ServiceName,
+		&result.Price,
+		&result.UserID,
+		&StartT,
+		&EndT)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			r.logger.Warn("подписка не найдена", zap.Int("id", id))
+			return domain.Subscription{}, service.ErrSubscriptionNotFound
+		}
+		r.logger.Warn(err.Error(), zap.Int("id", id))
+		return domain.Subscription{}, err
+	}
+
+	result.StartDate = StartT.Time.Format("01-2006")
+	if EndT.Valid {
+		strEnd := EndT.Time.Format("01-2006")
+		result.EndDate = &strEnd
+	}
+
+	return result, nil
+}
