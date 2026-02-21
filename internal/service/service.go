@@ -12,8 +12,8 @@ import (
 // CRUDL Методы для сервиса
 type SubService interface {
 	Create(ctx context.Context, sub domain.Subscription) (int, error)
-	Read(ctx context.Context, sub domain.Subscription) (domain.Subscription, error)
-	Update(ctx context.Context, sub domain.Subscription) (*domain.Subscription, error)
+	Read(ctx context.Context, id int) (domain.Subscription, error)
+	Update(ctx context.Context, sub domain.Subscription) error
 	Delete(ctx context.Context, id int) error
 	GetListByUserID(ctx context.Context, UserID uuid.UUID) ([]domain.Subscription, error)
 
