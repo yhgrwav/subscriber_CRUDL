@@ -43,9 +43,10 @@ func (s *SubscriptionService) Create(ctx context.Context, sub domain.Subscriptio
 	// в целом это бы выглядело как-то так: if sub.ServiceName != db.ServiceName { error }
 
 	//если пришла невалидная цена - кидаем Warn и делаем json ошибки для логов
-	if sub.Price <= 0 {
-		s.logger.Warn("Цена должна быть больше нуля", zap.Int("price", sub.Price), zap.String("user_id", sub.UserID.String()))
-		return 0, ErrInvalidPrice
+	err := ValidatePrice(sub.Price)
+	if err != nil {
+		s.logger.Warn("невалидная цена", zap.Error(err), zap.Int("price", sub.Price))
+		return 0, err
 	}
 	// можно было бы сюда добавить проверку на существование указанного сервиса спрашивая у редиса есть ли у нас сервис или нет
 	// и можно было бы проверить юзера по базе, но ради одного userID создавать базу смысла не особо много в рамках тестового
