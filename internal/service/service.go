@@ -70,7 +70,6 @@ func (s *SubscriptionService) Create(ctx context.Context, sub domain.Subscriptio
 	// и можно было бы проверить юзера по базе, но ради одного userID создавать базу смысла не особо много в рамках тестового
 	result, err := s.repo.Create(ctx, sub)
 	if err != nil {
-		s.logger.Error("ошибка создания подписки", zap.Error(err))
 		return 0, err
 	}
 	return result, nil
@@ -84,7 +83,6 @@ func (s *SubscriptionService) Read(ctx context.Context, id int) (domain.Subscrip
 	// т.к. технически мы не можем проверить наличие айди без похода в базу - сразу вызываем репозиторий
 	result, err := s.repo.GetByID(ctx, id)
 	if err != nil {
-		s.logger.Warn("подписка не найдена", zap.Int("id", id))
 		return domain.Subscription{}, err
 	}
 	return result, nil
