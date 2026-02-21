@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"testovoe_again/internal/domain"
+	"testovoe_again/internal/errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -158,7 +159,7 @@ func (r *PostgresRepo) GetByID(ctx context.Context, id int) (domain.Subscription
 	if err != nil {
 		if err == sql.ErrNoRows {
 			r.logger.Warn("подписка не найдена", zap.Int("id", id))
-			return domain.Subscription{}, service.ErrSubscriptionNotFound
+			return domain.Subscription{}, errors.ErrSubscriptionNotFound
 		}
 		r.logger.Warn(err.Error(), zap.Int("id", id))
 		return domain.Subscription{}, err
