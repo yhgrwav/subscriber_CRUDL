@@ -1,0 +1,300 @@
+basePath: /api/v1
+definitions:
+  http.CreateSubscriptionRequest:
+    properties:
+      end_date:
+        example: 08-2025
+        type: string
+      price:
+        example: 400
+        type: integer
+      service_name:
+        example: Yandex Plus
+        type: string
+      start_date:
+        example: 07-2025
+        type: string
+      user_id:
+        example: 60601fee-2bf1-4721-ae6f-7636e79a0cba
+        type: string
+    required:
+    - price
+    - service_name
+    - start_date
+    - user_id
+    type: object
+  http.CreateSubscriptionResponse:
+    properties:
+      end_date:
+        example: 08-2025
+        type: string
+      id:
+        example: 1
+        type: integer
+      price:
+        example: 400
+        type: integer
+      service_name:
+        example: Yandex Plus
+        type: string
+      start_date:
+        example: 07-2025
+        type: string
+      user_id:
+        example: 60601fee-2bf1-4721-ae6f-7636e79a0cba
+        type: string
+    type: object
+  http.GetStatsRequest:
+    properties:
+      first_date:
+        example: 01-2025
+        type: string
+      last_date:
+        example: 12-2025
+        type: string
+      service_name:
+        type: string
+      user_id:
+        type: string
+    required:
+    - first_date
+    - last_date
+    - service_name
+    - user_id
+    type: object
+  http.StatsResponse:
+    properties:
+      total_sum:
+        example: 1200
+        type: integer
+      user_id:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Сервис для управления подписками.
+  title: Subscription Service API
+  version: "1.0"
+paths:
+  /api/v1/healthcheck:
+    get:
+      description: простой эндпоинт для проверки того, что сервер запущен
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: проверка работоспособности
+      tags:
+      - system
+  /api/v1/stats:
+    post:
+      consumes:
+      - application/json
+      description: возвращает суммарную стоимость подписок по конкретному сервису
+        за указанный период
+      parameters:
+      - description: параметры фильтрации (UserID, ServiceName, Dates)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.GetStatsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.StatsResponse'
+        "400":
+          description: невалидный айди пользователя
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: ошибка расчёта суммы
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: рассчитать сумму затрат
+      tags:
+      - analytics
+  /api/v1/subscriptions:
+    post:
+      consumes:
+      - application/json
+      description: создает новую запись о подписке и возвращает её тело
+      parameters:
+      - description: данные новой подписки
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/http.CreateSubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/http.CreateSubscriptionResponse'
+        "400":
+          description: не удалось обработать запрос
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: создать подписку
+      tags:
+      - subscriptions
+  /api/v1/subscriptions/{id}:
+    delete:
+      description: удаляет запись о подписке из базы данных по её ID
+      parameters:
+      - description: id подписки
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: невалидный id
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: ошибка удаления
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: удалить подписку
+      tags:
+      - subscriptions
+    get:
+      description: возвращает данные конкретной подписки по её уникальному идентификатору
+      parameters:
+      - description: ID подписки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.CreateSubscriptionResponse'
+        "400":
+          description: невалидный ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: подписка не найдена
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: получить подписку по ID
+      tags:
+      - subscriptions
+    put:
+      consumes:
+      - application/json
+      description: обновляет данные существующей подписки по её ID и требует полное
+        тело запроса
+      parameters:
+      - description: ID подписки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: новые данные подписки
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/http.CreateSubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: невалидный ID или тело запроса
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: подписка не найдена
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: обновить подписку
+      tags:
+      - subscriptions
+  /api/v1/subscriptions/list/{user_id}:
+    get:
+      description: возвращает все активные подписки конкретного пользователя по его
+        UUID
+      parameters:
+      - description: UUID пользователя
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/http.CreateSubscriptionResponse'
+            type: array
+        "400":
+          description: невалидный айди пользователя
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: не удалось получить подписки
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: список подписок пользователя
+      tags:
+      - subscriptions
+swagger: "2.0"
