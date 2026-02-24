@@ -42,7 +42,7 @@ func NewLogger(logLevel string) (*zap.Logger, func() error, error) {
 
 	//создаем конфиг для логгера и указываем формат времени как в timestamp
 	cfg := zap.NewDevelopmentEncoderConfig()
-	cfg.EncodeTime = zapcore.TimeEncoderOfLayout(timestamp)
+	cfg.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02T15:04:05.000Z07:00")
 
 	encoder := zapcore.NewConsoleEncoder(cfg)
 	core := zapcore.NewTee(

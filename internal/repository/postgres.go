@@ -30,14 +30,18 @@ func NewPostgresRepo(db *sql.DB, logger *zap.Logger) *PostgresRepo {
 }
 
 func (p *PostgresRepo) Create(ctx context.Context, sub domain.Subscription) (int, error) {
-	query := `INSERT INTO subscriptions (service_name, Price, user_id, start_date) 
+	query := `INSERT INTO subscriptions (service_name, price, user_id, start_date) 
 			  VALUES ($1, $2, $3, $4) RETURNING id`
 
 	var id int
 
-	//использовал не Exec(), т.к. хочу явно передавать контекст для того, чтобы имплементировать интерфейсу
-	//и плюсом т.к. мы в ответе всегда получаем одну строку, этот метод идеально подходит для вычитывания одной строки + id для ответа
-	err := p.db.QueryRowContext(ctx, query, sub.ServiceName, sub.Price, sub.UserID, sub.StartDate).Scan(&id)
+	tStart, err := time.Parse("01-2006", sub.StartDate)
+	if err != nil {
+		p.logger.Error("невалидное поле start_date", zap.Error(err))
+		return 0, err
+	}
+
+	err = p.db.QueryRowContext(ctx, query, sub.ServiceName, sub.Price, sub.UserID, tStart).Scan(&id)
 	if err != nil {
 		p.logger.Error("ошибка при создании подписки", zap.Error(err))
 		return 0, err
@@ -100,10 +104,31 @@ func (r *PostgresRepo) GetByUserID(ctx context.Context, userID uuid.UUID) ([]dom
 // не пользователь сервиса подписок, а метод будет систематически вызываться условно для продления подписки, возможно
 // в случае обновлении цены, обновлении end_date.
 func (r *PostgresRepo) Update(ctx context.Context, id int, sub domain.Subscription) error {
-	query := `Update subscriptions 
-			  SET Price = $1, end_date = $2
-			  WHERE id = $3`
-	_, err := r.db.ExecContext(ctx, query, sub.Price, sub.EndDate, id)
+	query := `UPDATE subscriptions 
+			  SET price = $1, service_name = $2, start_date = $3, end_date = $4
+			  WHERE id = $5`
+
+	var tStart time.Time
+	var err error
+	if sub.StartDate != "" {
+		tStart, err = time.Parse("01-2006", sub.StartDate)
+		if err != nil {
+			r.logger.Error("невалидное поле start_date", zap.Error(err))
+			return err
+		}
+	}
+
+	var tEnd *time.Time
+	if sub.EndDate != nil {
+		te, err := time.Parse("01-2006", *sub.EndDate)
+		if err != nil {
+			r.logger.Error("невалидное поле end_date", zap.Error(err))
+			return err
+		}
+		tEnd = &te
+	}
+
+	_, err = r.db.ExecContext(ctx, query, sub.Price, sub.ServiceName, tStart, tEnd, id)
 	if err != nil {
 		r.logger.Error("ошибка обновления подписки", zap.Error(err))
 		return err
@@ -112,7 +137,7 @@ func (r *PostgresRepo) Update(ctx context.Context, id int, sub domain.Subscripti
 }
 
 func (r *PostgresRepo) Delete(ctx context.Context, id int) error {
-	query := `Delete from subscriptions 
+	query := `DELETE FROM subscriptions 
               WHERE id = $1`
 	_, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
